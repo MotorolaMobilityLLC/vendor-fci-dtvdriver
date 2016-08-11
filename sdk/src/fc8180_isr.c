@@ -32,58 +32,24 @@ s32 (*fc8180_ts_callback)(ulong userdata, u8 *data, s32 length) = NULL;
 ulong fc8180_ac_user_data;
 ulong fc8180_ts_user_data;
 
-static u8 ac_buf[AC_BUF_THR];
+
 static u8 ts_buf[TS_BUF_SIZE];
 
 #ifndef BBM_I2C_TSIF
 static void fc8180_data(HANDLE handle, u8 buf_int_status)
 {
 	u16 size = 0;
+	u32 rc;
 
 	if (buf_int_status & 0x01) { /* TS */
-		bbm_word_read(handle, BBM_BUF_TS_THR, &size);
-		size += 1;
-
-		bbm_data(handle, BBM_TS_DATA, &ts_buf[0], size);
+		size = TS_BUF_SIZE / 2;
+		rc = bbm_data(handle, BBM_TS_DATA, &ts_buf[0], size);
+		if (BBM_OK != rc)
+			return;
 
 		if (fc8180_ts_callback)
 			(*fc8180_ts_callback)(fc8180_ts_user_data,
 						&ts_buf[0], size);
-	}
-
-	if (buf_int_status & 0x02) { /* AC */
-		bbm_word_read(handle, BBM_BUF_AC_THR, &size);
-		size += 1;
-
-		bbm_data(handle, BBM_AC_DATA, &ac_buf[0], size);
-
-		if (fc8180_ac_callback)
-			(*fc8180_ac_callback)(fc8180_ac_user_data,
-						&ac_buf[0], size);
-	}
-
-	if (buf_int_status & 0x04) /* TMCC alarm */
-		;
-
-
-	if (buf_int_status & 0x08) /* TMCC re-configuration */
-		;
-
-	if (buf_int_status & 0x10) { /* Sync Lock or Unlock */
-		/*u8 sync = 0;
-		BBM_READ(handle, BBM_SYNC_RELATED_INT_STATUS, &sync);
-		BBM_WRITE(handle, BBM_SYNC_RELATED_INT_STATUS, sync);
-
-		if (sync & 0x01) { // OFDM Detection
-		}
-		if (sync & 0x02) { // Resync
-		}
-		if (sync & 0x04) { // TMCC Lock
-		}
-		if (sync & 0x08) { // BER
-		}
-		if (sync & 0x10) {
-		}*/
 	}
 }
 #endif
